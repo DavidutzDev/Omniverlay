@@ -6,6 +6,7 @@ use tauri::{AppHandle, Manager};
 use winapi::um::winuser::{GetDpiForWindow, GetForegroundWindow};
 
 pub mod extensions;
+pub mod native;
 
 #[tauri::command]
 pub async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {

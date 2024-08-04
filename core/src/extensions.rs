@@ -10,9 +10,9 @@ pub struct ExtensionGeometry {
     pub y: u32,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtensionInfo {
-    name: String,
+    pub name: String,
     is_enabled: bool,
     geometry: ExtensionGeometry,
 }
@@ -69,17 +69,19 @@ impl ExtensionManager {
         }
     }
 
-    pub fn update_extension_geometry(&mut self, extension_name: &str, geometry: ExtensionGeometry) -> OmniverlayResult<()> {
+    pub fn update_extension(&mut self, info: ExtensionInfo) -> OmniverlayResult<()> {
         if let Some(extension) = self
             .extensions
             .iter_mut()
-            .find(|e| e.name() == extension_name)
+            .find(|e| e.name() == info.name)
         {
-            extension.set_geometry(geometry);
+
+            extension.set_geometry(info.geometry)?;
+            
             Ok(())
         } else {
             Err(OmniverlayError::ExtensionNotFound(
-                extension_name.to_string(),
+                info.name.to_string(),
             ))
         }
     }

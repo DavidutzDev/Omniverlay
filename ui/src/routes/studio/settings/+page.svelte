@@ -1,15 +1,13 @@
-<script lang="ts">
+<script>
     import Sidebar from "$lib/components/studio/Sidebar.svelte";
-    import { invoke } from "@tauri-apps/api";
-    import { onMount } from "svelte";
+    import PageContainer from "$lib/components/studio/PageContainer.svelte";
 
-    
 </script>
-
 <main class="container">
     <Sidebar />
+    <PageContainer title="Settings">
 
-    
+    </PageContainer>
 </main>
 
 <style>

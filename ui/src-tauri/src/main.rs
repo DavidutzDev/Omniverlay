@@ -16,8 +16,8 @@ use tauri::{AppHandle, WindowBuilder};
 use utils::tray::create_system_tray;
 
 const OVERLAY_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
-    width: 256,
-    height: 256,
+    width: 0,
+    height: 0,
 });
 
 const STUDIO_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
@@ -34,15 +34,14 @@ fn main() {
 
             studio_window.set_min_size(Some(STUDIO_SIZE)).unwrap();
             studio_window.set_size(STUDIO_SIZE).unwrap();
+            studio_window.set_title("Omniverlay Studio").unwrap();
+            studio_window.set_resizable(false).unwrap();
 
             let overlay_window = app.get_window("main").unwrap();
 
             overlay_window.set_min_size(Some(OVERLAY_SIZE)).unwrap();
             overlay_window.set_size(OVERLAY_SIZE).unwrap();
             overlay_window.center().unwrap();
-            overlay_window.set_decorations(false).unwrap();
-
-            overlay_window.open_devtools();
 
             let _ = overlay_window.set_fullscreen(true);
 
@@ -66,7 +65,7 @@ fn main() {
             }
             #[cfg(not(target_os = "windows"))]
             {
-                info!("Not Windows, window transparency not implmented yet !")
+                info!("Not Windows, window Click through not implmented yet !")
             }
 
             Ok(())
@@ -74,8 +73,10 @@ fn main() {
         .system_tray(create_system_tray())
         .invoke_handler(tauri::generate_handler![
             commands::bootstrap_backend,
+            commands::native::open_url,
+            commands::native::get_window_infos,
             commands::extensions::list_extensions,
-            commands::extensions::update_extension_geometry
+            commands::extensions::update_extensions,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

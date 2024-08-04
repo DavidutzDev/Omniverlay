@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 
 use log::info;
-use omniverlay_core::{errors::{OmniverlayError, OmniverlayResult}, extensions::ExtensionGeometry, get_omniverlay, Omniverlay};
+use omniverlay_core::{errors::{OmniverlayError, OmniverlayResult}, extensions::{ExtensionGeometry, ExtensionInfo}, get_omniverlay, Omniverlay};
 use serde::Serialize;
 use tauri::{AppHandle, Manager, State};
 
@@ -17,15 +17,15 @@ pub fn list_extensions(app: AppHandle) -> Result<serde_json::Value, String> {
 }
 
 #[tauri::command]
-pub fn update_extension_geometry(app: AppHandle, name: String, geometry: ExtensionGeometry) -> Result<(), String> {
-    info!("Invoked update_extension_geometry with name: {} and geometry: {:?}", name, geometry);
+pub fn update_extensions(app: AppHandle, extensions: Vec<ExtensionInfo>) -> Result<(), String> {
+    info!("Invoked update_extensions with extensions: {:?}", extensions);
 
-    let mut overlay = get_omniverlay();
+    let mut omniverlay = get_omniverlay();
 
-    overlay
-        .extension_manager
-        .update_extension_geometry(&name, geometry)
-        .map_err(|_| OmniverlayError::ExtensionNotFound(name))?;
+    //TODO: ASYNC
+    for extension in &extensions {
+        omniverlay.extension_manager.update_extension(extension.clone()).map_err(|_| OmniverlayError::ExtensionNotFound(extension.name.clone()))?;
+    }
 
     app.emit_all("Omniverlay://refresh_extensions_data", true).unwrap();
 

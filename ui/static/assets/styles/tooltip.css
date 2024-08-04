@@ -1,0 +1,48 @@
+ .tooltip {
+    background-color: red;
+    color: red;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-size: 14px;
+    z-index: 10000;
+    opacity: 1;
+    display: none;
+    width: 170px;
+}
+
+.tooltip-inner {
+    font-size: 14px;
+    background-color: red;
+    left: 10px;
+}
+
+.tooltip[data-show] {
+    display: block;
+}
+
+.tooltip[data-show] #arrow {
+    display: block;
+}
+
+#arrow {
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+[data-popper-placement^='top'] .fa {
+    transform: rotate(0deg) translateX(500%) translateY(25px) !important;
+}
+
+[data-popper-placement^='bottom'] .fa {
+    transform: rotate(180deg) translateX(-500%) translateY(12px) !important;
+}
+
+[data-popper-placement^='left'] .fa {
+    transform: rotate(-90deg) translateX(-18px) translateY(1000%) !important;
+}
+
+[data-popper-placement^='right'] .fa {
+    transform: rotate(90deg) translateX(18px) translateY(12px) !important;
+}

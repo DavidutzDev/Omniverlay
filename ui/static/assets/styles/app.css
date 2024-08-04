@@ -1,0 +1,33 @@
+:root {
+    --background-color: #161827;
+    --foreground-color: #191d2d;
+    --primary-color: #c792ea;
+    --secondary-color: #2e5183;
+}
+
+body html * {
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+}
+
+/* ui/src/routes/studio/layout/+page.svelte */
+.studio-preview-item {
+    position: absolute;
+    background-color: var(--primary-color);
+    cursor: move;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none; /* Prevent text selection during drag */
+    opacity: 30%;
+  }
