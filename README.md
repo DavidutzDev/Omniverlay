@@ -1,6 +1,6 @@
 # Omniverlay ⭐
 
-![Omniverlay Banner](ui/static/app-banner.png)
+![Omniverlay Banner](ui/src/lib/assets/images/app-banner.png)
 
 Omniverlay is a cross-platform overlay application designed to provide various informations and tools through extensions.
 
