@@ -1,0 +1,14 @@
+[workspace]
+members = [
+  "core",
+  "ui/src-tauri",
+  "extensions/*",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+authors = ["Davidutz"]
+description = "A cross-platform Overlay for managing and displaying several things."
+homepage = "https://github.com/davidutz/omniverlay"
