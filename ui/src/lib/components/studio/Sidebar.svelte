@@ -12,7 +12,7 @@
 
     let navbarItems: NavItem[] = [
         { icon: "fa-solid fa-house", name: "Overview", href: "/studio" },
-        { icon: "fa-solid fa-puzzle-piece", name: "Extensions", href: "/studio/extension", },
+        { icon: "fa-solid fa-puzzle-piece", name: "Extensions", href: "/studio/extensions", },
         { icon: "fa-solid fa-desktop", name: "Layout", href: "/studio/layout" },
     ];
 

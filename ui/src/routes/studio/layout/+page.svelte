@@ -71,8 +71,8 @@
 
     const onSaveChanges = () => {
         items.forEach((item) => {
-            item.info.geometry.x = Math.round(item.x * xRatio);
-            item.info.geometry.y = Math.round(item.y * yRatio);
+            item.info.geometry!.x = Math.round(item.x * xRatio);
+            item.info.geometry!.y = Math.round(item.y * yRatio);
         });
 
         invoke("update_extensions", {
@@ -82,8 +82,8 @@
 
     const onDiscardChanges = () => {
         items.forEach((item) => {
-            item.x = item.info.geometry.x / xRatio;
-            item.y = item.info.geometry.y / yRatio;
+            item.x = item.info.geometry!.x / xRatio;
+            item.y = item.info.geometry!.y / yRatio;
         });
 
         updateItemsElements();
@@ -110,15 +110,15 @@
 
         // Get the list of extensions
         let infos: ExtensionInfo[] = (await getExtensions()).filter(
-            (info) => info.is_enabled,
+            (info) => info.is_enabled && info.geometry && info.geometry.width > 0 && info.geometry.height > 0,
         );
 
         items = infos.map((info, index) => ({
             id: index,
-            x: info.geometry.x / xRatio,
-            y: info.geometry.y / yRatio,
-            width: info.geometry.width / xRatio,
-            height: info.geometry.height / yRatio,
+            x: info.geometry!.x / xRatio,
+            y: info.geometry!.y / yRatio,
+            width: info.geometry!.width / xRatio,
+            height: info.geometry!.height / yRatio,
             info: info,
         }));
 

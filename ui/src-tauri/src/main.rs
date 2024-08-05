@@ -7,6 +7,7 @@ mod utils;
 use std::sync::Arc;
 
 use omniverlay_core::{errors::OmniverlayError, get_omniverlay, TAURI_APP_HANDLE};
+use performance::PerformanceExtension;
 use tauri::{AppHandle, WindowBuilder};
 use utils::tray::{create_system_tray, on_system_tray_event};
 
@@ -28,7 +29,7 @@ async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
 
     omniverlay
         .extension_manager
-        .register_extension(Box::new(performance::PerformanceExtension::new()));
+        .register_extension(PerformanceExtension::new())?;
 
     omniverlay
         .extension_manager

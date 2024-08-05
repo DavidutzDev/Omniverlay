@@ -1,7 +1,7 @@
 export interface ExtensionInfo {
     name: string;
     is_enabled: boolean;
-    geometry: ExtensionGeometry;
+    geometry?: ExtensionGeometry;
 }
 
 export interface ExtensionGeometry {

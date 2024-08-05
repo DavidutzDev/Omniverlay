@@ -69,7 +69,7 @@ To add a new extension, follow these steps:
 
 1. Create a new directory under `extensions/`.
 2. Follow `extensions/sample` to create a basic extension.
-3. Register the extension in `ui/src-tauri/src/commands/mod.rs` by editing `bootstrap_backend` function
+3. Register the extension in `ui/src-tauri/src/main.rs` by editing `bootstrap_backend` function
 4. Add your UI by creating `MyExtension.svelte` in `ui/src/lib/extensions/components`
 
 ## Contributing
