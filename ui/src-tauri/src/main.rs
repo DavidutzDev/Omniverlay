@@ -4,7 +4,10 @@
 mod commands;
 mod utils;
 
-use tauri::WindowBuilder;
+use std::sync::Arc;
+
+use omniverlay_core::{errors::OmniverlayError, get_omniverlay, TAURI_APP_HANDLE};
+use tauri::{AppHandle, WindowBuilder};
 use utils::tray::{create_system_tray, on_system_tray_event};
 
 const OVERLAY_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
@@ -16,6 +19,25 @@ const STUDIO_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
     width: 1280,
     height: 720,
 });
+
+#[tauri::command]
+async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
+    let mut omniverlay = get_omniverlay();
+
+    TAURI_APP_HANDLE.set(Arc::new(app)).map_err(|_| OmniverlayError::BackendInitialization("Failed to get TAURI_APP_HANDLE".to_string()))?;
+
+    omniverlay
+        .extension_manager
+        .register_extension(Box::new(performance::PerformanceExtension::new()));
+
+    omniverlay
+        .extension_manager
+        .enable_extension("Performance")
+        .map_err(|_| OmniverlayError::ExtensionLoadFailed("Performance".to_string()))?;
+
+    Ok(())
+}
+
 
 fn main() {
     tauri::Builder::default()
@@ -65,7 +87,7 @@ fn main() {
         .system_tray(create_system_tray())
         .on_system_tray_event(|app_handle, event| on_system_tray_event(app_handle, event))
         .invoke_handler(tauri::generate_handler![
-            commands::bootstrap_backend,
+            bootstrap_backend,
             commands::native::open_url,
             commands::extensions::list_extensions,
             commands::extensions::update_extensions,
