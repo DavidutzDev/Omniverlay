@@ -5,7 +5,7 @@ mod commands;
 mod utils;
 
 use tauri::WindowBuilder;
-use utils::tray::create_system_tray;
+use utils::tray::{create_system_tray, on_system_tray_event};
 
 const OVERLAY_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
     width: 0,
@@ -63,6 +63,7 @@ fn main() {
             Ok(())
         })
         .system_tray(create_system_tray())
+        .on_system_tray_event(|app_handle, event| on_system_tray_event(app_handle, event))
         .invoke_handler(tauri::generate_handler![
             commands::bootstrap_backend,
             commands::native::open_url,

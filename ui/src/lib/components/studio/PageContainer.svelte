@@ -2,7 +2,7 @@
     export let title: string;
 </script>
 
-<main class="page-container">
+<main id="page-container" class="page-container">
     <h1 class="page-title">{title}</h1>
     <slot />
 </main>
@@ -13,6 +13,7 @@
         height: 100%;
         background-color: var(--background-color);
         position: relative;
+        overflow: hidden;
     }
 
     .page-title {

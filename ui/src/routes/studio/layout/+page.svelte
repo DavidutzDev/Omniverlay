@@ -5,10 +5,14 @@
     import { getExtensions } from "$lib/extensions/loader";
     import { onMount } from "svelte";
     import { invoke } from "@tauri-apps/api";
-    import { currentMonitor } from '@tauri-apps/api/window';
+    import { currentMonitor } from "@tauri-apps/api/window";
     import type { ExtensionInfo } from "$lib/extensions/types";
 
-    let { popperContext: layoutSavePopper, popperRef: layoutSavePopperRef, showPopper: layoutSaveShowPopper } = createPopper({
+    let {
+        popperContext: layoutSavePopper,
+        popperRef: layoutSavePopperRef,
+        showPopper: layoutSaveShowPopper,
+    } = createPopper({
         placement: "top",
         strategy: "fixed",
         modifiers: [
@@ -17,8 +21,8 @@
                 options: {
                     offset: [0, 10],
                 },
-            }
-        ]
+            },
+        ],
     });
 
     // Define the interface for draggable items
@@ -36,11 +40,12 @@
     let windowHeight = 1080;
     let screenDPI = 1;
 
-    let scaleFactor = 2 / screenDPI;
-
     // Adjust preview dimensions based on screen DPI
-    let previewWidth = windowWidth / scaleFactor;
-    let previewHeight = windowHeight / scaleFactor;
+    let previewWidth = 0;
+    let previewHeight = 0;
+
+    let xRatio = 1;
+    let yRatio = 1;
 
     // List of draggable items
     let items: DraggableItem[] = [];
@@ -54,8 +59,6 @@
         items.forEach((item) => {
             const itemElement = document.getElementById(`item-${item.id}`)!;
 
-            console.log(item);
-
             itemElement.style.left = `${item.x * screenDPI}px`;
             itemElement.style.top = `${item.y * screenDPI}px`;
             itemElement.style.width = `${item.width * screenDPI}px`;
@@ -68,8 +71,8 @@
 
     const onSaveChanges = () => {
         items.forEach((item) => {
-            item.info.geometry.x = item.x * scaleFactor;
-            item.info.geometry.y = item.y * scaleFactor;
+            item.info.geometry.x = Math.round(item.x * xRatio);
+            item.info.geometry.y = Math.round(item.y * yRatio);
         });
 
         invoke("update_extensions", {
@@ -79,8 +82,8 @@
 
     const onDiscardChanges = () => {
         items.forEach((item) => {
-            item.x = item.info.geometry.x / scaleFactor;
-            item.y = item.info.geometry.y / scaleFactor;
+            item.x = item.info.geometry.x / xRatio;
+            item.y = item.info.geometry.y / yRatio;
         });
 
         updateItemsElements();
@@ -89,31 +92,33 @@
     onMount(async () => {
         const monitor = await currentMonitor();
 
-        if (!monitor) {
-            console.error("No monitor found");
+        // Update defaults values
+        screenDPI = monitor!.scaleFactor;
+        windowWidth = monitor!.size.width;
+        windowHeight = monitor!.size.height;
 
-            //TODO PROPER ERROR
-            return;
-        }
+        const pageContainer = document.getElementById(
+            "page-container",
+        ) as HTMLDivElement;
 
-        windowWidth = monitor.size.width;
-        windowHeight = monitor.size.height;
-        screenDPI = monitor.scaleFactor;
+        previewWidth = (pageContainer.getBoundingClientRect().width / 100) * 92; // 92% of the page
+        previewHeight =
+            (pageContainer.getBoundingClientRect().height / 100) * 65; // 65% of the page
 
-        console.log("Screen DPI: ", screenDPI);
+        xRatio = windowWidth / previewWidth;
+        yRatio = windowHeight / previewHeight;
 
+        // Get the list of extensions
         let infos: ExtensionInfo[] = (await getExtensions()).filter(
             (info) => info.is_enabled,
         );
 
-        console.log(infos);
-
         items = infos.map((info, index) => ({
             id: index,
-            x: info.geometry.x / scaleFactor,
-            y: info.geometry.y / scaleFactor,
-            width: info.geometry.width / scaleFactor,
-            height: info.geometry.height / scaleFactor,
+            x: info.geometry.x,
+            y: info.geometry.y,
+            width: info.geometry.width / xRatio,
+            height: info.geometry.height / yRatio,
             info: info,
         }));
 
@@ -134,13 +139,10 @@
 
         updateItemsElements();
 
-        const containerElement = document.querySelector(
-            ".preview-container",
-        ) as HTMLDivElement;
-
+        // Attach mouse listeners to each item
         const onMouseMove = (e: MouseEvent) => {
             if (draggingItem) {
-                const containerRect = containerElement.getBoundingClientRect();
+                const containerRect = previewContainer.getBoundingClientRect();
                 const itemElement = document.getElementById(
                     `item-${draggingItem.id}`,
                 )!;
@@ -174,26 +176,6 @@
                 const itemElement = document.getElementById(
                     `item-${draggingItem.id}`,
                 )!;
-                const containerRect = containerElement.getBoundingClientRect();
-                const itemRect = itemElement.getBoundingClientRect();
-
-                // Calculate the real boundaries of the item
-                const realWidth = itemRect.width * (scaleFactor * screenDPI);
-                const realHeight = itemRect.height * (scaleFactor * screenDPI);
-
-                // Calculate the real position in relation to the original window size
-                const realX =
-                    (itemRect.left - containerRect.left) *
-                    (scaleFactor * screenDPI);
-                const realY =
-                    (itemRect.top - containerRect.top) *
-                    (scaleFactor * screenDPI);
-
-                // Print information
-                console.log(`Item ID: ${draggingItem.id}`);
-                console.log(`Width: ${realWidth}px`);
-                console.log(`Height: ${realHeight}px`);
-                console.log(`Real Position - X: ${realX}px, Y: ${realY}px`);
 
                 // Clear dragging state
                 draggingItem = null;
@@ -250,7 +232,9 @@
                 ><i class="fa-solid fa-floppy-disk" /></button
             >
             {#if layoutSaveShowPopper}
-                <div class="popper" use:layoutSavePopper>Save current layout</div>
+                <div class="popper" use:layoutSavePopper>
+                    Save current layout
+                </div>
             {/if}
             <button class="button" on:click={onDiscardChanges}
                 >Discard Changes</button
