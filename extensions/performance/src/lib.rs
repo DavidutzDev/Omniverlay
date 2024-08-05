@@ -1,17 +1,15 @@
-use std::{
-    sync::{Arc, Mutex},
-    thread,
-};
+use std::thread;
 
 use log::info;
 use omniverlay_core::{
     errors::OmniverlayResult,
     extensions::{Extension, ExtensionGeometry},
-    get_omniverlay, TAURI_APP_HANDLE,
+    TAURI_APP_HANDLE,
 };
 use serde::Serialize;
 use sysinfo::System;
-use tauri::{AppHandle, Manager};
+use tauri::Manager;
+
 pub struct PerformanceExtension {
     is_enabled: bool,
     geometry: ExtensionGeometry,

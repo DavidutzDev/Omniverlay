@@ -1,9 +1,7 @@
-use std::{sync::Arc, thread, time::Duration};
+use std::sync::Arc;
 
-use log::info;
-use omniverlay_core::{errors::OmniverlayError, get_omniverlay, Omniverlay, TAURI_APP_HANDLE};
-use tauri::{AppHandle, Manager};
-use winapi::um::winuser::{GetDpiForWindow, GetForegroundWindow};
+use omniverlay_core::{errors::OmniverlayError, get_omniverlay, TAURI_APP_HANDLE};
+use tauri::AppHandle;
 
 pub mod extensions;
 pub mod native;
@@ -12,7 +10,7 @@ pub mod native;
 pub async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
     let mut omniverlay = get_omniverlay();
 
-    TAURI_APP_HANDLE.set(Arc::new(app));
+    TAURI_APP_HANDLE.set(Arc::new(app)).map_err(|_| OmniverlayError::BackendInitialization("Failed to get TAURI_APP_HANDLE".to_string()))?;
 
     omniverlay
         .extension_manager
@@ -22,15 +20,6 @@ pub async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
         .extension_manager
         .enable_extension("Performance")
         .map_err(|_| OmniverlayError::ExtensionLoadFailed("Performance".to_string()))?;
-
-    unsafe {
-        let hwnd = GetForegroundWindow(); // Obtenez le handle de la fenêtre en plein écran
-        let dpi = GetDpiForWindow(hwnd);
-
-        info!("DPI: {}", dpi);
-    }
-
-    //omniverlay.set_app_handle(Arc::new(app));
 
     Ok(())
 }

@@ -4,15 +4,7 @@
 mod commands;
 mod utils;
 
-use std::{
-    sync::{Arc, Mutex},
-    thread,
-    time::Duration,
-};
-
-use omniverlay_core::{get_omniverlay, Omniverlay, TAURI_APP_HANDLE};
-use once_cell::sync::OnceCell;
-use tauri::{AppHandle, WindowBuilder};
+use tauri::WindowBuilder;
 use utils::tray::create_system_tray;
 
 const OVERLAY_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
@@ -65,7 +57,7 @@ fn main() {
             }
             #[cfg(not(target_os = "windows"))]
             {
-                info!("Not Windows, window Click through not implmented yet !")
+                panic!("Not Windows, window Click through not implmented yet !")
             }
 
             Ok(())
@@ -74,7 +66,6 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::bootstrap_backend,
             commands::native::open_url,
-            commands::native::get_window_infos,
             commands::extensions::list_extensions,
             commands::extensions::update_extensions,
         ])

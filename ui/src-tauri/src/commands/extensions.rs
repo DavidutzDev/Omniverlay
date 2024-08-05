@@ -1,12 +1,9 @@
-use std::sync::Mutex;
-
 use log::info;
-use omniverlay_core::{errors::{OmniverlayError, OmniverlayResult}, extensions::{ExtensionGeometry, ExtensionInfo}, get_omniverlay, Omniverlay};
-use serde::Serialize;
-use tauri::{AppHandle, Manager, State};
+use omniverlay_core::{errors::OmniverlayError, extensions::ExtensionInfo, get_omniverlay};
+use tauri::{AppHandle, Manager};
 
 #[tauri::command]
-pub fn list_extensions(app: AppHandle) -> Result<serde_json::Value, String> {
+pub fn list_extensions() -> Result<serde_json::Value, String> {
     let overlay = get_omniverlay();
 
     let extensions = overlay.extension_manager.list_extensions()?;
