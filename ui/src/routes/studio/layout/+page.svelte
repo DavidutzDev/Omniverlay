@@ -101,9 +101,9 @@
             "page-container",
         ) as HTMLDivElement;
 
-        previewWidth = (pageContainer.getBoundingClientRect().width / 100) * 92; // 92% of the page
+        previewWidth = (pageContainer.getBoundingClientRect().width / 100) * 94; // 92% of the page
         previewHeight =
-            (pageContainer.getBoundingClientRect().height / 100) * 65; // 65% of the page
+            (pageContainer.getBoundingClientRect().height / 100) * 70; // 65% of the page
 
         xRatio = windowWidth / previewWidth;
         yRatio = windowHeight / previewHeight;
@@ -115,8 +115,8 @@
 
         items = infos.map((info, index) => ({
             id: index,
-            x: info.geometry.x,
-            y: info.geometry.y,
+            x: info.geometry.x / xRatio,
+            y: info.geometry.y / yRatio,
             width: info.geometry.width / xRatio,
             height: info.geometry.height / yRatio,
             info: info,
@@ -211,6 +211,17 @@
 <main class="container">
     <Sidebar />
     <PageContainer title="Layout Editor">
+        <div class="top-container">
+            <div class="accessibility-item">
+                <i class="accessibility-icon fa-solid fa-computer-mouse" />
+                <span>Hold left click to move</span>
+            </div>
+            <div class="accessibility-item">
+                <i class="accessibility-icon fa-solid fa-computer-mouse-scrollwheel" />
+                <span>Scroll to resize</span>
+            </div>
+        </div>
+
         <div
             class="dashed-container"
             style="width: {previewWidth + 10}px; height: {previewHeight +
@@ -250,6 +261,22 @@
     .container {
         display: flex;
         flex-direction: row;
+    }
+
+    .top-container {
+        position: relative;
+        display: flex;
+        justify-content: flex-end;
+        padding-right: 30px;
+        gap: 20px;
+    }
+
+    .accessibility-item {
+        color: white;
+    }
+
+    .accessibility-icon {
+        color: var(--primary-color);
     }
 
     .dashed-container {
