@@ -6,35 +6,35 @@ use tokio::sync::RwLock;
 
 #[derive(Debug)]
 pub enum OmniverlayEventType {
-    UpdateExtensions
+    UpdateExtensionData,
 }
 
 #[derive(Debug)]
-pub struct Event {
+pub struct OmniverlayEvent {
     pub event_type: OmniverlayEventType,
 }
 
-impl Display for Event {
+impl Display for OmniverlayEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-pub type EventHandler = Box<dyn Fn(Event) + Send + Sync>;
+pub type OmniverlayEventHandler = Box<dyn Fn(OmniverlayEvent) + Send + Sync>;
 
-pub static EVENT_HANDLER: OnceCell<RwLock<Option<EventHandler>>> = OnceCell::new();
+pub static EVENT_HANDLER: OnceCell<RwLock<Option<OmniverlayEventHandler>>> = OnceCell::new();
 
 #[macro_export]
 macro_rules! invoke_event {
     ($event_type:expr) => {
         {
-            use $crate::event::{Event, EVENT_HANDLER};
+            use $crate::event::{OmniverlayEvent, EVENT_HANDLER};
 
             // Log the event type
             log::info!("Invoking event: {:?}", $event_type);
 
             // Create the Event
-            let event = Event { event_type: $event_type };
+            let event = OmniverlayEvent { event_type: $event_type };
 
             // Get the event handler from the OnceCell
             if let Some(handler) = EVENT_HANDLER.get() {

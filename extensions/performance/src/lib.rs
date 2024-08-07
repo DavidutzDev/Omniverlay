@@ -3,7 +3,7 @@ use std::{sync::Arc, thread};
 use log::info;
 use omniverlay_core::{
     errors::OmniverlayResult,
-    extensions::{config::{ConfigValue, ExtensionConfigBuilder}, Extension, ExtensionGeometry, ExtensionInfo, ExtensionLayout, ExtensionState},
+    extensions::{config::{ConfigValue, ConfigValueType, ExtensionConfigBuilder}, Extension, ExtensionGeometry, ExtensionInfo, ExtensionLayout, ExtensionState},
 };
 use serde::Serialize;
 use sysinfo::System;
@@ -18,17 +18,19 @@ pub struct PerformanceExtension {
 impl PerformanceExtension {
     pub fn new() -> Self {
         let config = ExtensionConfigBuilder::new()
-            .add_value("name".to_string(), ConfigValue::String("Jhon".to_string()))
-            .add_value("lastname".to_string(), ConfigValue::String("Doe".to_string()))
-            .add_value("age".to_string(), ConfigValue::Int(47))
-            .add_value("job".to_string(), ConfigValue::String("Police Officer".to_string()))
-            .build();
-
+        .add_value("first_name".to_string(), ConfigValue::new("The first name of the person".to_string(), ConfigValueType::String("Jhon".to_string())))
+        .add_value("last_name".to_string(), ConfigValue::new("The last name of the person".to_string(), ConfigValueType::String("Doe".to_string())))
+        .add_value("age".to_string(), ConfigValue::new("The age of the person".to_string(), ConfigValueType::Int(30)))
+        .add_value("active".to_string(), ConfigValue::new("Is the person active".to_string(), ConfigValueType::Bool(true)))
+        .build();
 
         Self {
             info: Arc::new(Mutex::new(ExtensionInfo {
                 name: "Performance".to_string(),
-                state: ExtensionState::default(),
+                state: ExtensionState {
+                    is_enabled: true,
+                    config: Some(config),
+                },
                 layout: Some(ExtensionLayout {
                     width: 200,
                     height: 200,

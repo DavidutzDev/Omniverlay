@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use env_logger::Env;
 use errors::OmniverlayResult;
-use extensions::{data::{DataLoader, ExtensionDataManager, OmniverlayData, OmniverlayLayout, OmniverlayProfile}, ExtensionManager};
+use extensions::{data::{ExtensionDataManager, OmniverlayLayout, OmniverlayProfile}, ExtensionManager};
 use log::info;
 use once_cell::sync::Lazy;
 use tokio::sync::RwLock;
@@ -38,13 +38,37 @@ impl Omniverlay {
         {
             let profile_manager_guard = self.profile_manager.read().await;
 
-            profile_manager_guard.switch_data("default".to_string()).await?;
+            match profile_manager_guard.switch_data("default".to_string()).await {
+                Ok(_) => {},
+                Err(e) => match e {
+                    errors::OmniverlayError::DataNotFound(data) => {
+                        profile_manager_guard.new_data(data.clone()).await?;
+
+                        profile_manager_guard.switch_data(data).await?;
+                    },
+                    _ => {
+                        return Err(e);
+                    }
+                }
+            };
         }
 
         {
             let layout_manager_guard = self.layout_manager.read().await;
 
-            layout_manager_guard.switch_data("default".to_string()).await?;
+            match layout_manager_guard.switch_data("default".to_string()).await {
+                Ok(_) => {},
+                Err(e) => match e {
+                    errors::OmniverlayError::DataNotFound(data) => {
+                        layout_manager_guard.new_data(data.clone()).await?;
+
+                        layout_manager_guard.switch_data(data).await?;
+                    },
+                    _ => {
+                        return Err(e);
+                    }
+                }
+            };
         }
 
         Ok(())

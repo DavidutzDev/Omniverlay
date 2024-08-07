@@ -1,9 +1,8 @@
 use crate::{
-    errors::{OmniverlayError, OmniverlayResult},
-    get_omniverlay,
-    utils::fs::get_omniverlay_dir,
+    errors::{OmniverlayError, OmniverlayResult}, event::OmniverlayEventType, get_omniverlay, invoke_event, utils::fs::get_omniverlay_dir
 };
 use async_trait::async_trait;
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
 use tokio::sync::RwLock;
@@ -13,6 +12,7 @@ use super::{ExtensionLayout, ExtensionState};
 #[async_trait]
 pub trait OmniverlayData: Serialize + for<'de> Deserialize<'de> {
     fn name(&self) -> OmniverlayResult<String>;
+    fn set_name(&mut self, name: String) -> OmniverlayResult<()>;
     async fn apply_to_extensions(&self) -> OmniverlayResult<()>;
 
     async fn on_load(&mut self) -> OmniverlayResult<()> {
@@ -43,6 +43,12 @@ pub struct OmniverlayProfile {
 impl OmniverlayData for OmniverlayProfile {
     fn name(&self) -> OmniverlayResult<String> {
         Ok(self.name.clone())
+    }
+    
+    fn set_name(&mut self, name: String) -> OmniverlayResult<()> {
+        self.name = name;
+
+        Ok(())
     }
 
     async fn apply_to_extensions(&self) -> OmniverlayResult<()> {
@@ -78,6 +84,18 @@ impl OmniverlayData for OmniverlayProfile {
                     self.extensions
                         .insert(extension.name.clone(), extension.state.clone());
                 }
+
+                // if let Some(store) = self.extensions.get(&extension.name) {
+                //     let mut guard = store.clone();
+
+                //     if let Some(config) = extension.state.config {
+                //         if let Some(current_config) = guard.config.clone() {
+                //             if !config.match_structure(&current_config) {
+                //                 guard.config = Some(config);
+                //             }
+                //         }
+                //     }
+                // }
             }
         }
 
@@ -108,6 +126,12 @@ pub struct OmniverlayLayout {
 impl OmniverlayData for OmniverlayLayout {
     fn name(&self) -> OmniverlayResult<String> {
         Ok(self.name.clone())
+    }
+
+    fn set_name(&mut self, name: String) -> OmniverlayResult<()> {
+        self.name = name;
+
+        Ok(())
     }
 
     async fn apply_to_extensions(&self) -> OmniverlayResult<()> {
@@ -213,11 +237,32 @@ where
         Ok(())
     }
 
+    pub async fn new_data(&self, name: String) -> OmniverlayResult<()> {
+        let mut name = name;
+        let used_names = T::list_datas().unwrap_or_else(|_| vec![]);
+
+        if used_names.contains(&name) {
+            name = format!("{name} (1)");
+        }
+
+        let mut data = T::default();
+
+        data.set_name(name.clone())?;
+        
+        *self.data.write().await = data;
+
+        self.save_data().await?;
+
+        Ok(())
+    }
+
     pub async fn save_data(&self) -> OmniverlayResult<()> {
         let data = self.data.read().await;
         T::save_data(&data)?;
 
         data.apply_to_extensions().await?;
+
+        invoke_event!(OmniverlayEventType::UpdateExtensionData);
 
         Ok(())
     }

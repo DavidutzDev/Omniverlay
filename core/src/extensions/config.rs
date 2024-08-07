@@ -2,9 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{
     collections::{HashMap, HashSet},
-    fs::{create_dir_all, File},
-    io::{Read, Write},
-    path::PathBuf, sync::{Arc, Mutex},
+    sync::{Arc, Mutex},
 };
 
 use crate::errors::{OmniverlayError, OmniverlayResult}; // Ensure serde_json is used for JSON serialization
@@ -16,25 +14,36 @@ pub struct ConfigEnum {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum ConfigValue {
+pub enum ConfigValueType {
     String(String),
     Float(f64),
     Int(i64),
     Bool(bool),
-    List(Vec<ConfigValue>),
+    List(Vec<ConfigValueType>),
     Enum(ConfigEnum),
     Path(String),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigValue {
+    pub description: String,
+    pub value: ConfigValueType,
+}
+
+impl ConfigValue {
+    pub fn new(description: String, value: ConfigValueType) -> Self {
+        Self { description, value }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigCategory {
     pub name: String,
-    pub values: HashMap<String, ConfigValue>,
+    pub values: HashMap<String, ConfigValueType>,
 }
 
 impl ConfigCategory {
-    pub fn get_value(&self, name: &str) -> Option<&ConfigValue> {
+    pub fn get_value(&self, name: &str) -> Option<&ConfigValueType> {
         self.values.get(name)
     }
 }
@@ -77,7 +86,7 @@ impl ExtensionConfig {
         // Check the types of general values
         for (key, value) in &self.values {
             if let Some(other_value) = other.values.get(key) {
-                if !Self::value_type_matches(value, other_value) {
+                if !Self::value_type_matches(&value.value, &other_value.value) {
                     return false;
                 }
             } else {
@@ -118,23 +127,23 @@ impl ExtensionConfig {
     }
 
     // Helper method to compare value types
-    fn value_type_matches(value1: &ConfigValue, value2: &ConfigValue) -> bool {
+    fn value_type_matches(value1: &ConfigValueType, value2: &ConfigValueType) -> bool {
         match (value1, value2) {
-            (ConfigValue::String(_), ConfigValue::String(_)) => true,
-            (ConfigValue::Float(_), ConfigValue::Float(_)) => true,
-            (ConfigValue::Int(_), ConfigValue::Int(_)) => true,
-            (ConfigValue::Bool(_), ConfigValue::Bool(_)) => true,
-            (ConfigValue::List(list1), ConfigValue::List(list2)) => {
+            (ConfigValueType::String(_), ConfigValueType::String(_)) => true,
+            (ConfigValueType::Float(_), ConfigValueType::Float(_)) => true,
+            (ConfigValueType::Int(_), ConfigValueType::Int(_)) => true,
+            (ConfigValueType::Bool(_), ConfigValueType::Bool(_)) => true,
+            (ConfigValueType::List(list1), ConfigValueType::List(list2)) => {
                 list1.len() == list2.len()
                     && list1
                         .iter()
                         .zip(list2.iter())
                         .all(|(v1, v2)| Self::value_type_matches(v1, v2))
             }
-            (ConfigValue::Enum(enum1), ConfigValue::Enum(enum2)) => {
+            (ConfigValueType::Enum(enum1), ConfigValueType::Enum(enum2)) => {
                 enum1.name == enum2.name && enum1.values == enum2.values
             }
-            (ConfigValue::Path(_), ConfigValue::Path(_)) => true,
+            (ConfigValueType::Path(_), ConfigValueType::Path(_)) => true,
             _ => false,
         }
     }

@@ -6,11 +6,11 @@ mod utils;
 
 use std::sync::Arc;
 
-use omniverlay_core::{errors::OmniverlayError, event::{EventHandler, OmniverlayEventType, EVENT_HANDLER}, get_omniverlay};
+use omniverlay_core::{errors::OmniverlayError, event::{OmniverlayEvent, OmniverlayEventHandler, OmniverlayEventType, EVENT_HANDLER}, get_omniverlay};
 use performance::PerformanceExtension;
 use tauri::{AppHandle, WindowBuilder, Manager};
 use tokio::sync::RwLock;
-use utils::tray::{create_system_tray, on_system_tray_event};
+use utils::tray::{self, create_system_tray, on_system_tray_event};
 
 const OVERLAY_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
     width: 0,
@@ -26,15 +26,25 @@ const STUDIO_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
 async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
     let app_handle: Arc<AppHandle> = Arc::new(app);
 
-    let event: EventHandler = Box::new(move |event| {
+    async fn handle_event(app_handle: Arc<AppHandle>, event: OmniverlayEvent) {
+        let app_handle = Arc::clone(&app_handle);
+
         match event.event_type {
-            OmniverlayEventType::UpdateExtensions => {
+            OmniverlayEventType::UpdateExtensionData => {
                 app_handle.clone().emit_all("Omniverlay://refresh_extensions_data", true).unwrap();
+
+                tray::update_system_tray(&app_handle.clone().app_handle()).await;
             },
         }
-    });
+    }
 
-    EVENT_HANDLER.set(RwLock::new(Some(event))).map_err(|_| OmniverlayError::BackendInitialization("Failed to get EVENT_HANDLER".to_string()))?; 
+    let event_handler = Box::new(move |event: OmniverlayEvent| {
+        let app_handle = Arc::clone(&app_handle);
+        tokio::spawn(async move {
+            handle_event(app_handle, event).await;
+        });
+    }) as OmniverlayEventHandler;
+    EVENT_HANDLER.set(RwLock::new(Some(event_handler))).map_err(|_| OmniverlayError::BackendInitialization("Failed to get EVENT_HANDLER".to_string()))?; 
 
     let omniverlay = get_omniverlay();
     let guard = omniverlay.read().await;
@@ -55,7 +65,7 @@ async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
 
 
 #[tokio::main]
-async  fn main() {
+async fn main() {
     tauri::Builder::default()
         .setup(move |app| {
             use tauri::Manager;
@@ -101,7 +111,15 @@ async  fn main() {
             Ok(())
         })
         .system_tray(create_system_tray().await)
-        .on_system_tray_event(|app_handle, event| on_system_tray_event(app_handle, event))
+        .on_system_tray_event(|app_handle, event| {
+            let app_handle = app_handle.clone();
+
+            let _ = tokio::spawn(async move {
+                on_system_tray_event(&app_handle, event).await
+            });
+
+            ()
+        })
         .invoke_handler(tauri::generate_handler![
             bootstrap_backend,
             commands::native::open_url,

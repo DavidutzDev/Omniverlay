@@ -48,8 +48,6 @@ pub async fn update_extensions_state(
 
     profile_manager_guard.save_data().await?;
 
-    invoke_event!(OmniverlayEventType::UpdateExtensions);
-
     Ok(())
 }
 
@@ -76,8 +74,6 @@ pub async fn update_extensions_layout(layouts: HashMap<String, ExtensionLayout>)
     }
 
     layout_manager_guard.save_data().await?;
-
-    invoke_event!(OmniverlayEventType::UpdateExtensions);
 
     Ok(())
 }
