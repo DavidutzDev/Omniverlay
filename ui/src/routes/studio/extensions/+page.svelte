@@ -9,12 +9,12 @@
     let extensions: ExtensionInfo[] = [];
 
     const onClickPrimary = (extension: ExtensionInfo) => {
-        extension.is_enabled = !extension.is_enabled;
+        extension.state.is_enabled = !extension.state.is_enabled;
 
         extensions = extensions;
 
-        invoke("update_extensions", {
-            extensions,
+        invoke("update_extensions_state", {
+            states: new Map(extensions.map((extension) => [extension.name, extension.state])),
         });
     };
 
@@ -41,7 +41,7 @@
                                 class="button button-primary"
                                 on:click={() => onClickPrimary(extension)}
                             >
-                                { extension.is_enabled ? "Disable" : "Enable" }
+                                { extension.state.is_enabled ? "Disable" : "Enable" }
                             </button>
                             <button class="button button-secondary">
                                 <i class="fa-solid fa-gear" />

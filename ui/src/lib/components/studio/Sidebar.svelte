@@ -72,7 +72,7 @@
     </ul>
 
     <footer class="footer">
-        <p class="footer-text">© 2022 Omniverlay</p>
+        <p class="footer-text">© 2024 Omniverlay</p>
     </footer>
 </nav>
 

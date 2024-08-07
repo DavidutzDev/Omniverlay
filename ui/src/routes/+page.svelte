@@ -18,12 +18,12 @@
             );
 
             window.location.href = "/overlay";
-        });
+        }).catch((err) => console.error(err));;
 
         await listen("test", async (event) => {
             console.log("Event " + event.payload);
         });
-    });
+    })
 </script>
 
 <main class="container">

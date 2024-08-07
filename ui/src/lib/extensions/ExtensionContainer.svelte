@@ -7,12 +7,12 @@
 
     console.log("Viewport Width:", window.innerWidth);
     console.log("Viewport Height:", window.innerHeight);
-    console.log("Div Width:", info.geometry.width);
-    console.log("Div Height:", info.geometry.height);
-    console.log("Div X Position:", info.geometry.x);
-    console.log("Div Y Position:", info.geometry.y);
+    console.log("Div Width:", info.layout.width);
+    console.log("Div Height:", info.layout.height);
+    console.log("Div X Position:", info.layout.x);
+    console.log("Div Y Position:", info.layout.y);
 </script>
 
-<div class="container" style="position: static; width: {info.geometry.width}px; height: {info.geometry.height}px; left: {info.geometry.x}px; top: {info.geometry.y}px;">
+<div class="container" style="position: static; width: {info.layout.width}px; height: {info.layout.height}px; left: {info.layout.x}px; top: {info.layout.y}px;">
     <svelte:component this={child} {info} />
 </div>

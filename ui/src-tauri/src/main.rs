@@ -6,9 +6,10 @@ mod utils;
 
 use std::sync::Arc;
 
-use omniverlay_core::{errors::OmniverlayError, get_omniverlay, TAURI_APP_HANDLE};
+use omniverlay_core::{errors::OmniverlayError, event::{EventHandler, OmniverlayEventType, EVENT_HANDLER}, get_omniverlay};
 use performance::PerformanceExtension;
-use tauri::{AppHandle, WindowBuilder};
+use tauri::{AppHandle, WindowBuilder, Manager};
+use tokio::sync::RwLock;
 use utils::tray::{create_system_tray, on_system_tray_event};
 
 const OVERLAY_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
@@ -23,24 +24,38 @@ const STUDIO_SIZE: tauri::Size = tauri::Size::Physical(tauri::PhysicalSize {
 
 #[tauri::command]
 async fn bootstrap_backend(app: AppHandle) -> Result<(), String> {
-    let mut omniverlay = get_omniverlay();
+    let app_handle: Arc<AppHandle> = Arc::new(app);
 
-    TAURI_APP_HANDLE.set(Arc::new(app)).map_err(|_| OmniverlayError::BackendInitialization("Failed to get TAURI_APP_HANDLE".to_string()))?;
+    let event: EventHandler = Box::new(move |event| {
+        match event.event_type {
+            OmniverlayEventType::UpdateExtensions => {
+                app_handle.clone().emit_all("Omniverlay://refresh_extensions_data", true).unwrap();
+            },
+        }
+    });
 
-    omniverlay
-        .extension_manager
-        .register_extension(PerformanceExtension::new())?;
+    EVENT_HANDLER.set(RwLock::new(Some(event))).map_err(|_| OmniverlayError::BackendInitialization("Failed to get EVENT_HANDLER".to_string()))?; 
 
-    omniverlay
-        .extension_manager
-        .enable_extension("Performance")
-        .map_err(|_| OmniverlayError::ExtensionLoadFailed("Performance".to_string()))?;
+    let omniverlay = get_omniverlay();
+    let guard = omniverlay.read().await;
 
+    // Register extension (Write lock)
+    {
+        guard.get_extension_manager().await.write().await.register_extension(PerformanceExtension::new()).await?;
+    }
+
+    guard.startup().await.map_err(|_| OmniverlayError::BackendInitialization("Failed to start Omniverlay".to_string()))?;
+
+    //invoke_event!(guard, EventType::UpdateExtensions("AAaaaaa".to_string()));
+
+    //TAURI_APP_HANDLE.set(Arc::new(app)).map_err(|_| OmniverlayError::BackendInitialization("Failed to get TAURI_APP_HANDLE".to_string()))?;
+    
     Ok(())
 }
 
 
-fn main() {
+#[tokio::main]
+async  fn main() {
     tauri::Builder::default()
         .setup(move |app| {
             use tauri::Manager;
@@ -85,13 +100,14 @@ fn main() {
 
             Ok(())
         })
-        .system_tray(create_system_tray())
+        .system_tray(create_system_tray().await)
         .on_system_tray_event(|app_handle, event| on_system_tray_event(app_handle, event))
         .invoke_handler(tauri::generate_handler![
             bootstrap_backend,
             commands::native::open_url,
             commands::extensions::list_extensions,
-            commands::extensions::update_extensions,
+            commands::extensions::update_extensions_state,
+            commands::extensions::update_extensions_layout
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

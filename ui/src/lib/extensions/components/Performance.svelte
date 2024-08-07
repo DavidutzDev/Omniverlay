@@ -4,7 +4,7 @@
     export let info: ExtensionInfo;
 </script>
 
-<div class="container" style="position: absolute; width: {info.geometry.width}px; height: {info.geometry.height}px; left: {info.geometry.x}px; top: {info.geometry.y}px;">
+<div class="container" style="position: absolute; width: {info.layout.width}px; height: {info.layout.height}px; left: {info.layout.x}px; top: {info.layout.y}px;">
 
 </div>
 

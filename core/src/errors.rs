@@ -19,6 +19,27 @@ pub enum OmniverlayError {
     #[error("Serialization error: {0}")]
     SerdeJson(#[from] serde_json::Error),
 
+    #[error("Lock error: {0}")]
+    LockError(String),
+
+    #[error("Serialization error: {0}")]
+    SerializationError(String),
+
+    #[error("Config not found: {0}")]
+    ConfigNotFound(String),
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Cannot find the app directory")]
+    AppDirectory,
+
+    #[error("Profile not found: {0}")]
+    ProfileNotFound(String),
+
+    #[error("No data found for: {0}")]
+    DataNotFound(String),
+
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

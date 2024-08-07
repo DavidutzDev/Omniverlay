@@ -1,10 +1,14 @@
 export interface ExtensionInfo {
     name: string;
-    is_enabled: boolean;
-    geometry?: ExtensionGeometry;
+    state: ExtensionState;
+    layout?: ExtensionLayout;
 }
 
-export interface ExtensionGeometry {
+export interface ExtensionState {
+    is_enabled: boolean;
+}
+
+export interface ExtensionLayout {
     width: number;
     height: number;
     x: number;

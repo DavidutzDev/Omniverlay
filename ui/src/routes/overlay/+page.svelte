@@ -23,17 +23,17 @@
             const storeValue = get(componentsStore);
 
             const loadPromises = infos
-                .filter((info) => info.is_enabled && !storeValue.has(info))
+                .filter((info) => info.state.is_enabled && !storeValue.has(info))
                 .map(async (info) => {
                     console.log(`Loading ${info.name}...`);
                     const component = await loadExtension(info.name);
-                    storeValue.set(info, component);
+                    storeValue.set(info, component!);
                 });
 
             await Promise.all(loadPromises);
 
             infos
-                .filter((info) => !info.is_enabled && storeValue.has(info))
+                .filter((info) => !info.state.is_enabled && storeValue.has(info))
                 .forEach((info) => {
                     storeValue.delete(info);
                 });
@@ -51,7 +51,7 @@
             componentsStore.set(storeValue);
 
             const loadPromises = extensionsInfos
-                .filter((info) => info.is_enabled && !storeValue.has(info))
+                .filter((info) => info.state.is_enabled && !storeValue.has(info))
                 .map(async (info) => {
                     const component = await loadExtension(info.name);
 

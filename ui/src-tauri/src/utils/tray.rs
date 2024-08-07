@@ -1,13 +1,42 @@
+use omniverlay_core::{extensions::data::{DataLoader, OmniverlayProfile}, get_omniverlay};
 use tauri::{
     AppHandle, CustomMenuItem, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
     SystemTraySubmenu,
 };
 
-pub fn create_system_tray() -> tauri::SystemTray {
-    let profiles_menu = SystemTrayMenu::new().add_item(CustomMenuItem::new(
+pub async fn create_system_tray() -> tauri::SystemTray {
+    let mut profiles_menu = SystemTrayMenu::new()
+    .add_item(CustomMenuItem::new(
         "add_profile".to_string(),
         "Add Profile",
-    ));
+    ))
+    .add_native_item(SystemTrayMenuItem::Separator);
+
+    {
+        let omniverlay = get_omniverlay();
+        let omniverlay_guard = omniverlay.read().await;
+
+        let profile_manager = omniverlay_guard.get_profile_manager().await;
+        let profile_manager_guard = profile_manager.read().await;
+
+        for profile in OmniverlayProfile::list_datas().unwrap_or_else(|_| vec![]) {
+            let mut item = CustomMenuItem::new(profile.clone(), profile.clone());
+
+            match profile_manager_guard.get_current().await {
+                Ok(current_profile) => {
+                    if current_profile.read().await.name == profile {
+                        item = item.selected();
+                    }
+                },
+                Err(e) => {
+                    println!("Failed to get current profile: {}", e);
+                }
+            }
+
+            profiles_menu = profiles_menu.add_item(item);
+        }
+    }
+
     let profiles_submenu = SystemTraySubmenu::new("Profiles", profiles_menu);
 
     let layouts_menu =
