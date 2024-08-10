@@ -10,7 +10,14 @@ use crate::errors::{OmniverlayError, OmniverlayResult}; // Ensure serde_json is 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigEnum {
     pub name: String,
+    pub current: String,
     pub values: Vec<String>,
+}
+
+impl ConfigEnum {
+    pub fn new(name: String, current: String, values: Vec<String>) -> Self {
+        Self { name, current, values }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,24 +46,62 @@ impl ConfigValue {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigCategory {
     pub name: String,
-    pub values: HashMap<String, ConfigValueType>,
+    pub values: HashMap<String, ConfigValue>,
 }
 
 impl ConfigCategory {
-    pub fn get_value(&self, name: &str) -> Option<&ConfigValueType> {
+    pub fn new(name: String) -> Self {
+        Self { name, values: HashMap::new() }
+    }
+
+    pub fn add_value(&mut self, name: String, value: ConfigValue) {
+        self.values.insert(name, value);
+    }
+
+    pub fn get_value(&self, name: &str) -> Option<&ConfigValue> {
         self.values.get(name)
+    }
+}
+
+pub struct ConfigCategoryBuilder {
+    name: String,
+    values: HashMap<String, ConfigValue>,
+}
+
+impl ConfigCategoryBuilder {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            values: HashMap::new(),
+        }
+    }
+
+    pub fn add_value(mut self, name: String, value: ConfigValue) -> Self {
+        self.values.insert(name, value);
+        self
+    }
+
+    pub fn build(self) -> ConfigCategory {
+        ConfigCategory {
+            name: self.name,
+            values: self.values,
+        }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExtensionConfig {
     pub categories: Vec<ConfigCategory>,
-    pub values: HashMap<String, ConfigValue>, // General configs
 }
 
 impl ExtensionConfig {
-    pub fn get_value(&self, name: &str) -> Option<&ConfigValue> {
-        self.values.get(name)
+    pub fn get_value(&self, name: &str) -> Option<(&ConfigCategory, &ConfigValue)> {
+        for category in &self.categories {
+            if let Some(value) = category.get_value(name) {
+                return Some((category, value));
+            }
+        }
+        None
     }
 
     pub fn get_category(&self, name: &str) -> Option<&ConfigCategory> {
@@ -77,23 +122,6 @@ impl ExtensionConfig {
 
     // Method to match the structure of two ExtensionConfig instances
     pub fn match_structure(&self, other: &Self) -> bool {
-        // Compare general values
-        if self.values.keys().collect::<HashSet<_>>() != other.values.keys().collect::<HashSet<_>>()
-        {
-            return false;
-        }
-
-        // Check the types of general values
-        for (key, value) in &self.values {
-            if let Some(other_value) = other.values.get(key) {
-                if !Self::value_type_matches(&value.value, &other_value.value) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-
         // Compare categories
         let self_categories: HashMap<_, _> = self
             .categories
@@ -126,6 +154,26 @@ impl ExtensionConfig {
         true
     }
 
+    // Helper method to compare category structures
+    fn category_structure_matches(cat1: &ConfigCategory, cat2: &ConfigCategory) -> bool {
+        if cat1.values.keys().collect::<HashSet<_>>() != cat2.values.keys().collect::<HashSet<_>>()
+        {
+            return false;
+        }
+
+        for (key, value) in &cat1.values {
+            if let Some(other_value) = cat2.values.get(key) {
+                if !Self::value_type_matches(&value.value, &other_value.value) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        true
+    }
+
     // Helper method to compare value types
     fn value_type_matches(value1: &ConfigValueType, value2: &ConfigValueType) -> bool {
         match (value1, value2) {
@@ -147,38 +195,16 @@ impl ExtensionConfig {
             _ => false,
         }
     }
-
-    // Helper method to compare category structures
-    fn category_structure_matches(cat1: &ConfigCategory, cat2: &ConfigCategory) -> bool {
-        if cat1.values.keys().collect::<HashSet<_>>() != cat2.values.keys().collect::<HashSet<_>>()
-        {
-            return false;
-        }
-
-        for (key, value) in &cat1.values {
-            if let Some(other_value) = cat2.values.get(key) {
-                if !Self::value_type_matches(value, other_value) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-
-        true
-    }
 }
 
 pub struct ExtensionConfigBuilder {
     pub categories: Vec<ConfigCategory>,
-    pub values: HashMap<String, ConfigValue>,
 }
 
 impl ExtensionConfigBuilder {
     pub fn new() -> Self {
         Self {
             categories: Vec::new(),
-            values: HashMap::new(),
         }
     }
 
@@ -187,15 +213,9 @@ impl ExtensionConfigBuilder {
         self
     }
 
-    pub fn add_value(mut self, name: String, value: ConfigValue) -> Self {
-        self.values.insert(name, value);
-        self
-    }
-
     pub fn build(self) -> ExtensionConfig {
         ExtensionConfig {
             categories: self.categories,
-            values: self.values,
         }
     }
 }
@@ -227,39 +247,5 @@ impl ExtensionConfigManager {
             .ok_or_else(|| OmniverlayError::ConfigNotFound(name.to_string()))
     }
 
-    // pub fn save_config(&self, name: &str) -> OmniverlayResult<()> {
-    //     // if let Some(parent) = self.path.parent() {
-    //     //     println!("Parent: {:?}", parent);
-    //     //     if !parent.exists() {
-    //     //         create_dir_all(parent)?; // Create directory if it doesn't exist
-    //     //     }
-    //     // }
-
-    //     // let arc_config = self.get_config(name)?;
-    //     // let config = arc_config.lock().map_err(|e| OmniverlayError::LockError(e.to_string()))?;
-
-    //     // // Save the configuration to a file
-    //     // let file_path = self.path.join(format!("{}.json", name));
-    //     // let mut file = File::create(&file_path)?;
-    //     // let config_json = config.to_json()?;
-    //     // file.write_all(config_json.as_bytes())?;
-
-    //     // Ok(())
-    // }
-
-    // pub fn load_config(&self, name: &str) -> OmniverlayResult<ExtensionConfig> {
-    //     // let file_path = self.path.join(format!("{}.json", name));
-
-    //     // if !file_path.exists() {
-    //     //     return Err(OmniverlayError::ConfigNotFound(name.to_string()));
-    //     // }
-
-    //     // let mut file = File::open(&file_path)?;
-    //     // let mut contents = String::new();
-    //     // file.read_to_string(&mut contents)?;
-
-    //     // let config: ExtensionConfig = ExtensionConfig::from_json(&contents)?;
-
-    //     // Ok(config)
-    // }
+    // Other methods related to saving and loading configs can be implemented here
 }

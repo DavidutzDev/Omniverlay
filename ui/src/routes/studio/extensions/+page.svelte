@@ -4,9 +4,12 @@
     import { getExtensions } from "$lib/extensions/loader";
     import Sidebar from "$lib/components/studio/Sidebar.svelte";
     import PageContainer from "$lib/components/studio/PageContainer.svelte";
+    import ExtensionConfigModal from "$lib/components/studio/ExtensionConfigModal.svelte";
     import type { ExtensionInfo } from "$lib/extensions/types";
 
     let extensions: ExtensionInfo[] = [];
+    let isConfigModalVisible = false;
+    let selectedExtension: ExtensionInfo | null = null;
 
     const onClickPrimary = (extension: ExtensionInfo) => {
         extension.state.is_enabled = !extension.state.is_enabled;
@@ -14,8 +17,19 @@
         extensions = extensions;
 
         invoke("update_extensions_state", {
-            states: new Map(extensions.map((extension) => [extension.name, extension.state])),
+            states: new Map(
+                extensions.map((extension) => [
+                    extension.name,
+                    extension.state,
+                ]),
+            ),
         });
+    };
+
+    const onClickConfig = (extension: ExtensionInfo) => {
+        console.log("config", extension);
+        selectedExtension = extension;
+        isConfigModalVisible = true;
     };
 
     onMount(async () => {
@@ -37,19 +51,33 @@
                             <p>{extension.name}</p>
                         </div>
                         <div class="extension-bottom">
-                            <button 
+                            <button
                                 class="button button-primary"
                                 on:click={() => onClickPrimary(extension)}
                             >
-                                { extension.state.is_enabled ? "Disable" : "Enable" }
+                                {extension.state.is_enabled
+                                    ? "Disable"
+                                    : "Enable"}
                             </button>
-                            <button class="button button-secondary">
+                            <button
+                                class="button button-secondary"
+                                on:click={() => onClickConfig(extension)}
+                            >
                                 <i class="fa-solid fa-gear" />
                             </button>
                         </div>
                     </div>
                 {/each}
             </div>
+            {#if isConfigModalVisible && selectedExtension}
+                <ExtensionConfigModal
+                    extension={selectedExtension}
+                    onClose={() => {
+                        isConfigModalVisible = false;
+                        selectedExtension = null;
+                    }}
+                />
+            {/if}
         </div>
     </PageContainer>
 </main>

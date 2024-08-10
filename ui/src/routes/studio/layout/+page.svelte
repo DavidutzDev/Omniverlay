@@ -308,10 +308,7 @@
         padding: 10px 20px;
         font-size: 16px;
         cursor: pointer;
-        transition:
-            background-color 0.3s ease,
-            color 0.3s ease,
-            transform 0.5s ease;
+        transition: all 0.4s ease;
     }
 
     .button:hover {
