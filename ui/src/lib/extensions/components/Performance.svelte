@@ -9,7 +9,6 @@
 </div>
 
 <style>
-
     .container {
         background-color: red;
     }
